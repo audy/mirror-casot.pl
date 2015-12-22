@@ -1,0 +1,158 @@
+******************************************************
+  CasOT - CRISPR/Cas system (Cas9/gRNA) Off-Targeter
+******************************************************
+
+
+CasOT is a genome-wide potential Cas9/gRNA off-target searching tool.
+
+
+REQUIREMENT
+===========
+Perl program needs to be installed (http://www.perl.org/get.html).
+
+
+EXAMPLES
+========
+
+All files of examples can be downloaded from 
+http://eendb.zfgenetics.org/casot/example.php
+
+Example 0: get a quick help.
+----------------------------
+    perl casot.pl -h
+
+Example 1: search potential off-targets with default options.
+    perl casot.pl -t=example -g=GRCh37
+
+    It searches for potential off-target sites of the targets within the file 
+    example in the genome sequence file GRCh37, in a single-gRNA mode, with 
+    default PAM type and numbers of mismatches in the seed & non-seed regions 
+    allowed (equal to use the options -s=2 -n=255 -p=A).
+
+    The output directory is example-GRCh37-s2/, including a statistic file 
+    (_stat) and some result files named by each input target sites in .csv 
+    (common seperated version) format (in this example, they are CCR5_#L.csv, 
+    CCR5_#R.csv, eGFP_#L.csv, and eGFP_#R.csv).
+
+Example 2: search potential off-targets with some user-specified options.
+    perl casot.pl -t=example -g=GRCh37 -e=r73h.gtf -o=tab -s=1 -n=4 -p=B
+
+    It is similar to the above example, while the PAM type allowed is level B 
+    (-NGG and -NAG) and only one mismatch allowed in the seed region and two 
+    mismatches allowed in the non-seed region. The potential off-target site 
+    is checked whether is located in an exon based on the exon-annotation file 
+    r37h.gtf.
+
+    The output directory is example-GRCh37-s1n4pB/ and the result files in it 
+    are in tabular .txt format.
+
+Example 3: search potential off-targets in the paired-gRNA mode.
+    perl casot.pl -t=example -g=GRCh37 -o=tab -m=paired
+
+    It searches for potential off-target sites of the targets in the paired-
+    gRNA mode. This is a mode designed for the usage of Cas9-nickase and a 
+    pair of gRNAs (see reference of CasOT).
+
+    The output includes the result files of single-gRNA mode, and more files 
+    of the paired-gRNA search results for each target pair. (in this example, 
+    they are CCR5.txt and eGFP.txt).
+
+Example 4: search potential off-targets in the target-and-off-target mode.
+    perl casot.pl -t=example_seq -g=GRCh37 -m=target
+
+    It searches for candidate target site from the input sequence 
+    example_seq, and then search for potential off-target sites of them.
+
+    The output also includes a file of candidate target sites (_sites).
+
+
+OPTIONS
+=======
+
+Options -t and -g are required.
+
+General options
+---------------
+    -h, -help
+        Immediately show a quick help.
+    -m, -mode
+        -- single (default), paired, or target
+        Three searching modes are available: the single-gRNA (single), the 
+        paired-gRNA (paired), and the target-and-off-target mode (target).
+    -t, -target ( *Required* )
+        -- Name of a file in FASTA format. 
+        File name of target sites (single- or paired-gRNA mode) or sequence 
+        to search candidate target sites (target-and-off-target mode). In 
+        single- or paired-gRNA mode, all sequences should be ended with -NGG 
+        (the PAM) and 21-33 nt in length (18-30-nt protospacer plus the PAM). 
+        In paired-gRNA mode, same sequence names should be followed with `_#F' 
+        and `_#R' suffixes in pair. In target-and-off-target mode, input 
+        sequences should be <1 kb.
+    -g, -genome ( *Required* )
+        -- Name(s) of one or more files in FASTA format. 
+        File names of the genome sequence or other sequences to search for 
+        potential off-target sites. Links to download several widely-used 
+        genome files are available in the CasOT website. This option can be 
+        used more than once for search in multiple genomes, such as:
+            -g genome1 -g genome2
+    -e, -exon 
+        -- Name of the exon annotation file in GTF format.
+        File name of the exon annotation of certain genome. Links to several 
+        annotation files are available in the CasOT website. If provided, gene 
+        IDs and gene symbols will be output if a potential off-target site 
+        locates in an exon. The sequence names in the annotation file should 
+        be identical to those in the genome sequence file, i.e., `chr1' is not 
+        equal to `1'.
+    -o, -output 
+        -- csv (default) or tab. 
+        Output file format. The default .csv (common separated version) file 
+        (csv) can be directly opened by most spreadsheet software such as 
+        Microsoft Excel. The tabular .txt file (tab) is more readable in text 
+        editors and can also be copy-pasted to the spreadsheet software.
+
+Off-target related options for all three modes
+----------------------------------------------
+    -s, -seed 
+        -- 0-6 (default: 2). 
+        Maximum number of mismatches allowed in the seed region of potential 
+        off-target sites. If this parameter is > 4 (-p=5 or -p=6), a large RAM 
+        of the computer is needed.
+    -n, -nonseed 
+        -- 0-255 (default: 255). 
+        Maximum number of mismatches allowed in the non-seed region of 
+        potential off-target sites. 
+    -p, -pam 
+        -- A (default), B, C, or N 
+        Allowed level of PAM type. A: -NGG only; B: -NGG and -NAG; C: -NGG, 
+        -NAG and -NNGG; N: no limit.
+
+Option for paired-gRNA mode
+--------------------------
+    -d, -distance 
+        -- 0-1000 (default: 100) 
+        Maximum distance (i.e., number of nucleotides) allowed between the two 
+        potential off-target sequences of an input paired-gRNA.
+
+Options for target-and-off-target mode
+--------------------------------------
+    -r, -require5g 
+        -- yes (default) or no. 
+        Allowed type of candidate target sites.
+        If the value is no, only -NGG type of PAM is required; if it is yes, a 
+        G in the first position is required as well (if T7 promoter is used 
+        for gRNA transcription, the first nucleotide in the RNA transcript 
+        will be guanine).
+    -l, -length 
+        -- Two numbers between 18 and 30 connected by a dash (default: 19-20). 
+        Allowed range (nt) of protospacer length of the candidate sites.
+
+
+CONTACT
+=======
+Website:   http://eendb.zfgenetics.org/casot/
+E-mail:    zfgenetics@gmail.com
+
+
+REFERENCE
+=========
+The manuscript is under review.

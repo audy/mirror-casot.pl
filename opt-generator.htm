@@ -1,0 +1,420 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+
+<head>
+
+	<meta http-equiv="Content-Language" content="zh-cn">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>CasOT - Options</title>
+	<link rel="stylesheet" href="style.css" type="text/css" media="screen" />
+
+<script type="text/javascript">
+
+	var flagIE;
+	var flagAlerted;
+
+	function load() {
+		if ( window.navigator.userAgent.indexOf("MSIE") >= 0 ) {
+			flagIE = true;
+			document.getElementById("tfile_ie").style.display = "inline";
+			document.getElementById("gfile_ie").style.display = "inline";
+			document.getElementById("efile_ie").style.display = "inline";
+		}
+		else {
+			flagIE = false;
+			document.getElementById("tfile_noie").style.display = "inline";
+			document.getElementById("gfile_noie").style.display = "inline";
+			document.getElementById("efile_noie").style.display = "inline";
+		}	
+	}
+
+	function checknonseed() {
+		var tmp = Math.floor( document.frm.nonseed.value );
+		document.frm.nonseed.value = tmp;
+		if ( isNaN(tmp) || tmp < 0 || tmp > 255 ) {
+			alert( "This field must be a number between 0 and 255" );
+			document.frm.nonseed.value = 255;
+			document.frm.nonseed.focus();
+		}
+		update();
+	}
+
+	function checkdistance() {
+		var tmp = Math.floor( document.frm.distance.value );
+		document.frm.distance.value = tmp;
+		if ( isNaN(tmp) || tmp < 0 || tmp > 1000 ) {
+			alert( "This field must be a number between 0 and 1000" );
+			document.frm.distance.value = 100;
+			document.frm.distance.focus();
+		}
+		update();
+	}
+
+	function checklength( obj, defaultvalue ) {
+		var tmp = Math.floor( obj.value );
+		obj.value = tmp;
+		if ( isNaN(tmp) || tmp < 18 || tmp > 30) {
+			alert( "This fields must be two numbers between 18 and 30." );
+			obj.value = defaultvalue;
+			obj.focus();
+		}
+		update();
+	}
+
+
+	function getpath_ie(obj) {
+		var path;
+		obj.select();
+		obj.blur();
+		// For IE10: it is needed to blur this element after selection
+		// The above line thank to pengBelial, see http://appfog.xosas.com/topic/3rd/786f7361736e6f646531/3235303131.html
+		return document.selection.createRange().text;
+	}
+
+	function getpath_noie(obj) {
+		var path = obj.value.replace( /"/g, '' );
+		if ( !flagAlerted && path != '' && path.indexOf('\\') < 0 && path.indexOf('/') < 0) {
+			flagAlerted = true;
+			alert( "The full path of the file should be included, e.g.,\n\tD:\\path\\to\\" + path + "\n(D:\\path\\to\\ is supposed), NOT\n\t" + path + "\nonly; or all files and casot.pl must be put in the same folder.\n\n(This alert only shows once.)" );
+			obj.focus();
+		}
+		return path;
+	}
+
+
+
+	function update() {
+
+		var opt = '';
+
+		opt += ' -m=';
+		for ( var i=0; i<document.frm.mode.length; i++ )
+			if ( document.frm.mode[i].checked ) {
+				opt += document.frm.mode[i].value;
+				break;
+			}
+
+		if ( flagIE ) {
+			if ( document.frm.targetfile_ie.value != '' )
+				opt += " -t='" + getpath_ie(document.frm.targetfile_ie) + "'";
+			if ( document.frm.genomefile_ie.value != '' )
+				opt += " -g='" + getpath_ie(document.frm.genomefile_ie) + "'";
+			if ( document.frm.exonfile_ie.value != '' )
+				opt += " -e='" + getpath_ie(document.frm.exonfile_ie) + "'";
+		}
+		else {
+			var tmppath = getpath_noie(document.frm.targetfile_noie);
+			if ( tmppath != '' )
+				opt += " -t='" + tmppath + "'";
+			var tmppath = getpath_noie(document.frm.genomefile_noie);
+			if ( tmppath != '' )
+				opt += " -g='" + tmppath + "'";
+			var tmppath = getpath_noie(document.frm.exonfile_noie);
+			if ( tmppath != '' )
+				opt += " -e='" + tmppath + "'";
+		}
+
+		opt += ' -o=';
+		for ( var i=0; i<document.frm.output.length; i++ )
+			if ( document.frm.output[i].checked ) {
+				opt += document.frm.output[i].value;
+				break;
+			}
+
+		opt += ' -s=' + document.frm.seed.options[document.frm.seed.selectedIndex].value;
+
+		if ( document.frm.nonseed.value != 255 )
+			opt += ' -n=' + document.frm.nonseed.value;
+
+		if ( ! document.frm.pam[0].checked ) {
+			opt += ' -p=';
+			for ( var i=0; i<document.frm.pam.length; i++ )
+				if ( document.frm.pam[i].checked ) {
+					opt += document.frm.pam[i].value;
+					break;
+				}
+		}
+
+		if ( document.frm.mode[1].checked ) {
+			opt += ' -d=' + document.frm.distance.value;
+		}
+
+		if ( document.frm.mode[2].checked ) {
+			opt += ' -r=';
+			for ( var i=0; i<document.frm.require5g.length; i++ )
+				if ( document.frm.require5g[i].checked ) {
+					opt += document.frm.require5g[i].value;
+					break;
+				}
+			if ( document.frm.lengthmin.value > document.frm.lengthmax.value )
+				opt += ' -l=' + document.frm.lengthmax.value + '-' + document.frm.lengthmin.value;
+			else
+				opt += ' -l=' + document.frm.lengthmin.value + '-' + document.frm.lengthmax.value;
+		}
+
+		document.frm.options.value = opt;
+
+/*		if ( flagNotIeFirst ) {
+			document.getElementById("note").style.display = "inline";
+			alert( 'Note: Your web-brower (which is not IE 6-10) blocks the path information in the option string box.\nIt is needed to use the actual paths instead of the tags <#!SEE_NOTE!#>.' );
+			flagNotIeFirst = false;
+		}
+*/
+	} // end of update()
+
+
+</script>
+</head>
+
+<body onload="load()">
+
+
+<div class="maintitle">
+	CasOT - Options
+</div>
+
+
+<form name="frm">
+
+<div class="maintext">
+	CasOT currently supports the following options. Both the short and the long option names are equal in meaning, <i>e.g.</i>,<br>
+	<span class="constant">&nbsp;&nbsp;&nbsp;&nbsp;-m=paired</span><br>
+	is equal to<br>
+	<span class="constant">&nbsp;&nbsp;&nbsp;&nbsp;-mode=paired</span>.<br>
+	<br>
+	<span class="constant">-t</span> and <span class="constant">-g</span> are required.<br>
+	<br>
+	Select options below to generate the option string here:<br>
+	<textarea name="options" rows="4" cols="78" onclick="this.select()"></textarea><br>
+</div>
+
+<br>
+
+
+
+<div class="maintable" width="80%">
+
+<table>
+
+	<a name="general">
+	<tr>
+		<td colspan="3"><span class="big"><br><b>General options</b></span><br><br></td>
+	</tr>
+
+	<tr>
+		<th width=100>Option</th>
+		<th>Values</th>
+		<th>Description</th>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-h<br>-help</span></td>
+		<td></td>
+		<td>
+			Immediately show a quick help.<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-m<br>-mode</span></td>
+		<td>
+			<input type="radio" name="mode" value="single" onChange="update()" checked="checked">single-gRNA mode (default)<br>
+			<input type="radio" name="mode" value="paired" onChange="update()">paired-gRNA mode<br>
+			<input type="radio" name="mode" value="target" onChange="update()">target-and-off-target mode<br>
+		</td>
+		<td>
+			The searching mode.<br>
+			Three modes are available: single-gRNA (<span class="constant">single</span>), paired-gRNA (<span class="constant">paired</span>), and target-and-off-target (<span class="constant">target</span>) mode.<br>
+			See <a target="_blank" href="example.php">examples</a>.<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-t<br>-target</span></td>
+		<td>
+			<b>Required</b>; path and name of a FASTA file.<br>
+			<span id="tfile_ie" style="display:none"><input type="file" name="targetfile_ie" size="10" onChange="update()"></span>
+			<span id="tfile_noie" style="display:none">
+				<input type="text" name="targetfile_noie" size="40" onChange="update()"><br>
+				<span class="small2"><b>Windows:</b> Shift + Right-click the file -&gt; choose `Copy as path'<br><b>Mac:</b> drag and drop the file to <span class="constant">copypath-mac.app</span></span>
+			</span>
+		</td>
+		<td>
+			File name of target sites (single- or paired-gRNA mode) or sequence to search for candidate target sites (target-and-off-target mode) in FASTA format.<br>
+			In single- or paired-gRNA mode, all sequences should be ended with -NGG (the PAM) and 21-33 nt in length (18-30-nt protospacer plus the PAM). In paired-gRNA mode, same sequence names should be followed with `<span class="constant">_#F</span>' and `<span class="constant">_#R</span>' suffixes in pair. In target-and-off-target mode, input sequences should be &lt;1 kb.<br>
+			See <a target="_blank" href="example.php">examples</a>.<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-g<br>-genome</span></td>
+		<td>
+			<b>Required</b>; path and name of a FASTA file.<br>
+			<span id="gfile_ie" style="display:none"><input type="file" name="genomefile_ie" size="10" onChange="update()"></span>
+			<span id="gfile_noie" style="display:none">
+				<input type="text" name="genomefile_noie" size="40" onChange="update()"><br>
+				<span class="small2"><b>Windows:</b> Shift + Right-click the file -&gt; choose `Copy as path'<br><b>Mac:</b> drag and drop the file to <span class="constant">copypath-mac.app</span></span>
+			</span>
+		</td>
+		<td>
+			File names of the genome sequence or other sequences in FASTA format to search for potential off-target sites.<br>
+			<a target="_blank" href="download.php#other">Links</a> to download several widely-used genome files are available in the CasOT website. This option can be used more than once for search in multiple genomes, such as:<br>
+			<span class="constant">&nbsp;&nbsp;&nbsp;&nbsp;-g genome1 -g genome2</span>.<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-e<br>-exon</span></td>
+		<td>
+			Path and name of a GTF file.<br>
+			<span id="efile_ie" style="display:none"><input type="file" name="exonfile_ie" size="10" onChange="update()"></span>
+			<span id="efile_noie" style="display:none">
+				<input type="text" name="exonfile_noie" size="40" onChange="update()"><br>
+				<span class="small2"><b>Windows:</b> Shift + Right-click the file -&gt; choose `Copy as path'<br><b>Mac:</b> drag and drop the file to <span class="constant">copypath-mac.app</span></span>
+			</span>
+		</td>
+		<td>
+			File name of the exon annotation of certain genome in GTF format.<br>
+			<a target="_blank" href="download.php#other">Links</a> to several annotation files are available in the CasOT website. If provided, gene IDs and gene symbols will be output if a potential off-target site locates in an exon. The sequence names in annotation file should be identical to those in genome file, <i>i.e.</i>, `<span class="constant">chr1</span>' is not equal to `<span class="constant">1</span>'.<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-o<br>-output</span></td>
+		<td>
+			<input type="radio" name="output" value="csv" onChange="update()" checked="checked"><span class="constant">.csv</span> format (default)<br>
+			<input type="radio" name="output" value="tab" onChange="update()"><span class="constant">.tab</span> format<br>
+		</td>
+		<td>
+			Output file format.<br>
+			The default <span class="constant">.csv</span> (common separated version) file (<span class="constant">csv</span>) can be directly opened by spreadsheet software such as Microsoft Excel. The tabular <span class="constant">.txt</span> file (<span class="constant">tab</span>) is more readable in text editors and can also be copy-pasted to the spreadsheet software.<br>
+		</td>
+	</tr>
+
+
+	<a name="ot">
+	<tr>
+		<td colspan="3"><span class="big"><br><b>Off-target related options for all three modes</b></span><br><br></td>
+	</tr>
+
+	<tr>
+		<th>Option</th>
+		<th>Values</th>
+		<th>Description</th>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-s<br>-seed</span></td>
+		<td>
+			<select name="seed" onChange="update()">
+				<option value="0">0</option>
+				<option value="1">1</option>
+				<option value="2" selected>2 (default)</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+				<option value="5">5 (require large RAM)</option>
+				<option value="6">6 (require large RAM)</option>
+			</select> mismatch(es)
+		</td>
+		<td>
+			Maximum number of mismatches allowed in the seed region of potential off-target sites.<br>
+			If this parameter is &gt; 4 (<span class="constant">-s=5</span> or <span class="constant">-s=6</span>), a large RAM of the computer is needed.<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-n<br>-nonseed</span></td>
+		<td>
+			<span class="constant">0</span>-<span class="constant">255</span> (default: <span class="constant">255</span>).<br>
+			<input type="text" name="nonseed" value="255" size="15" onChange="checknonseed()"> mismatch(es)
+		</td>
+		<td>
+			Maximum allowed number of mismatches in the non-seed region of potential off-target sites.<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-p<br>-pam</span></td>
+		<td>
+			<input type="radio" name="pam" value="A" onChange="update()" checked="checked"><span class="constant">A</span>: <span class="constant">-NGG</span> only (default)<br>
+			<input type="radio" name="pam" value="B" onChange="update()"><span class="constant">B</span>: <span class="constant">-NGG</span> and <span class="constant">-NAG</span><br>
+			<input type="radio" name="pam" value="C" onChange="update()"><span class="constant">C</span>: <span class="constant">-NGG</span>, <span class="constant">-NAG</span> and <span class="constant">-NNGG</span><br>
+			<input type="radio" name="pam" value="N" onChange="update()"><span class="constant">N</span>: no limit.<br>
+		</td>
+		<td>
+			Allowed PAM type.
+		</td>
+	</tr>
+
+
+	<a name="paired">
+	<tr>
+		<td colspan="3"><span class="big"><br><b>Option for paired-gRNA mode</b></span><br><br></td>
+	</tr>
+
+	<tr>
+		<th>Option</th>
+		<th>Values</th>
+		<th>Description</th>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-d<br>-distance</span></td>
+		<td>
+			<span class="constant">0</span>-<span class="constant">1000</span> (default: <span class="constant">100</span>).<br>
+			<input type="text" name="distance" value="100" size="15" onChange="checkdistance()"> nt(s)
+		</td>
+		<td>
+			Maximum distance (<i>i.e.</i>, number of nucleotides) allowed between the two potential off-target sequences of an input paired-gRNA.<br>
+		</td>
+	</tr>
+
+
+	<a name="target">
+	<tr>
+		<td colspan="3"><span class="big"><br><b>Options for target-and-off-target mode</b></span><br><br></td>
+	</tr>
+
+	<tr>
+		<th>Option</th>
+		<th>Value</th>
+		<th>Description</th>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-r<br>-require5g</span></td>
+		<td>
+			<input type="radio" name="require5g" value="yes" onChange="update()" checked="checked">required a 5'-G (default)<br>
+			<input type="radio" name="require5g" value="no" onChange="update()">not required a 5'-G<br>
+		</td>
+		<td>
+			Allowed type of candidate target sites.<br>
+			If the value is <span class="constant">no</span>, only a <span class="constant">-NGG</span> PAM is required; if it is <span class="constant">yes</span>, a <span class="constant">G</span> in the first position is required as well (if T7 promoter is used for gRNA transcription, the first nucleotide in the RNA transcript will be guanine).<br>
+		</td>
+	</tr>
+
+	<tr>
+		<td><span class="constant">-l<br>-length</span></td>
+		<td>
+			Two numbers between 18 and 30 (default: <span class="constant">19-20</span>).<br>
+			<input type="text" name="lengthmin" value="19" size="3" onChange="checklength(this,19)"> <span class="constant"><b>-</b></span> <input type="text" name="lengthmax" value="20" size="3" onChange="checklength(this,20)"> nts
+		</td>
+		<td>
+			Allowed range (nt) of protospacer length of the candidate sites.<br>
+		</td>
+	</tr>
+
+</table>
+
+
+</div>
+
+</form>
+
+
+<br><br>
+
+
+</body>
+
+</html>
